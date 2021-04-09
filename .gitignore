@@ -11,3 +11,5 @@ results.txt
 *.py[cod]
 __pycache__/
 
+venv/
+.vscode/
