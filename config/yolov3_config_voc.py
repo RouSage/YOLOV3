@@ -1,6 +1,6 @@
 # coding=utf-8
 # project
-DATA_PATH = "/content/drive/MyDrive/diploma/VOC"
+DATA_PATH = "/content/VOC"
 PROJECT_PATH = "/content/drive/MyDrive/diploma/YOLOV3"
 
 
@@ -22,7 +22,7 @@ MODEL = {"ANCHORS":[[(1.25, 1.625), (2.0, 3.75), (4.125, 2.875)],  # Anchors for
 TRAIN = {
          "TRAIN_IMG_SIZE":448,
          "AUGMENT":True,
-         "BATCH_SIZE":8,
+         "BATCH_SIZE":64,
          "MULTI_SCALE_TRAIN":True,
          "IOU_THRESHOLD_LOSS":0.5,
          "EPOCHS":50,
