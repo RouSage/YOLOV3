@@ -1,21 +1,22 @@
+import argparse
 import logging
-import utils.gpu as gpu
-from model.yolov3 import Yolov3
-from model.loss.yolo_loss import YoloV3Loss
+import random
+import time
+
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
-from torch.utils.data import DataLoader
-import utils.datasets as data
-import time
-import random
-import argparse
-from eval.evaluator import *
-from utils.tools import *
 from tensorboardX import SummaryWriter
-import config.yolov3_config_voc as cfg
-from utils import cosine_lr_scheduler
+from torch.utils.data import DataLoader
 
+import config.yolov3_config_voc as cfg
+import utils.datasets as data
+import utils.gpu as gpu
+from eval.evaluator import *
+from model.loss.yolo_loss import YoloV3Loss
+from model.yolov3 import Yolov3
+from utils import cosine_lr_scheduler
+from utils.tools import *
 
 # import os
 # os.environ["CUDA_VISIBLE_DEVICES"]='2'
@@ -65,8 +66,8 @@ class Trainer(object):
                 self.optimizer.load_state_dict(chkpt['optimizer'])
                 self.best_mAP = chkpt['best_mAP']
             del chkpt
-        else:
-            self.yolov3.load_darknet_weights(weight_path)
+        # else:
+        #     self.yolov3.load_darknet_weights(weight_path)
 
 
     def __save_model_weights(self, epoch, mAP):
@@ -122,14 +123,14 @@ class Trainer(object):
                 mloss = (mloss * i + loss_items) / (i + 1)
 
                 # Print batch results
-                if i%10==0:
+                if i%20==0:
                     s = ('Epoch:[ %d | %d ]    Batch:[ %d | %d ]    loss_giou: %.4f    loss_conf: %.4f    loss_cls: %.4f    loss: %.4f    '
                          'lr: %g') % (epoch, self.epochs - 1, i, len(self.train_dataloader) - 1, mloss[0],mloss[1], mloss[2], mloss[3],
                                       self.optimizer.param_groups[0]['lr'])
                     print(s)
 
                 # multi-sclae training (320-608 pixels) every 10 batches
-                if self.multi_scale_train and (i+1)%10 == 0:
+                if self.multi_scale_train and (i+1)%20 == 0:
                     self.train_dataset.img_size = random.choice(range(10,20)) * 32
                     print("multi_scale_img_size : {}".format(self.train_dataset.img_size))
 
@@ -150,7 +151,7 @@ class Trainer(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weight_path', type=str, default='weight/darknet53_448.weights', help='weight file path')
+    parser.add_argument('--weight_path', type=str, default='weights/darknet53_448.weights', help='weight file path')
     parser.add_argument('--resume', action='store_true',default=False,  help='resume training flag')
     parser.add_argument('--gpu_id', type=int, default=0, help='gpu id')
     opt = parser.parse_args()
