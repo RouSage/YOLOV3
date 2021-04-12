@@ -137,7 +137,7 @@ class Trainer(object):
                         print("multi_scale_img_size : {}".format(self.train_dataset.img_size))
 
             mAP = 0
-            if epoch >= 20:
+            if epoch >= 20 and epoch % 10 == 0:
                 print('*'*20+"Validate"+'*'*20)
                 with torch.no_grad():
                     APs = Evaluator(self.yolov3).APs_voc()
