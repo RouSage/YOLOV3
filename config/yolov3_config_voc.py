@@ -2,6 +2,7 @@
 # project
 DATA_PATH = "/content/VOC"
 PROJECT_PATH = "/content/drive/MyDrive/diploma/YOLOV3"
+TMP_RESULTS_PATH = "/content"
 
 
 DATA = {"CLASSES":['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',

@@ -1,22 +1,25 @@
-import config.yolov3_config_voc as cfg
 import os
 import shutil
-from eval import voc_eval
-from utils.datasets import *
-from utils.gpu import *
+
+import config.yolov3_config_voc as cfg
 import cv2
 import numpy as np
-from utils.data_augment import *
 import torch
-from utils.tools import *
 from tqdm import tqdm
+from utils.data_augment import *
+from utils.datasets import *
+from utils.gpu import *
+from utils.tools import *
 from utils.visualize import *
+
+from eval import voc_eval
 
 
 class Evaluator(object):
     def __init__(self, model, visiual=True):
         self.classes = cfg.DATA["CLASSES"]
-        self.pred_result_path = os.path.join(cfg.PROJECT_PATH, 'data', 'results')
+        #! Save results to tmp folder not in Google Drive
+        self.pred_result_path = os.path.join(cfg.TMP_RESULTS_PATH, 'results')
         self.val_data_path = os.path.join(cfg.DATA_PATH, 'VOCtest-2007', 'VOCdevkit', 'VOC2007')
         self.conf_thresh = cfg.TEST["CONF_THRESH"]
         self.nms_thresh = cfg.TEST["NMS_THRESH"]
@@ -49,7 +52,7 @@ class Evaluator(object):
                 scores = bboxes_prd[..., 4]
 
                 visualize_boxes(image=img, boxes=boxes, labels=class_inds, probs=scores, class_labels=self.classes)
-                path = os.path.join(cfg.PROJECT_PATH, "data/results/{}.jpg".format(self.__visual_imgs))
+                path = os.path.join(cfg.TMP_RESULTS_PATH, "results/{}.jpg".format(self.__visual_imgs))
                 cv2.imwrite(path, img)
 
                 self.__visual_imgs += 1
@@ -161,7 +164,8 @@ class Evaluator(object):
         :return:dict{cls:ap}
         """
         filename = os.path.join(self.pred_result_path, 'comp4_det_test_{:s}.txt')
-        cachedir = os.path.join(self.pred_result_path, 'cache')
+        #! Save cache straight to Google Drive unlike everything else
+        cachedir = os.path.join(cfg.PROJECT_PATH, 'data', 'cache')
         annopath = os.path.join(self.val_data_path, 'Annotations', '{:s}.xml')
         imagesetfile = os.path.join(self.val_data_path,  'ImageSets', 'Main', 'test.txt')
         APs = {}
