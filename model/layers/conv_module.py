@@ -1,8 +1,7 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .activate import *
 
+from .activate import *
 
 norm_name = {"bn": nn.BatchNorm2d}
 activate_name = {

@@ -1,9 +1,10 @@
 import sys
+
 sys.path.append("../utils")
+# import config.yolov3_config_voc as cfg
 import torch
 import torch.nn as nn
 from utils import tools
-import config.yolov3_config_voc as cfg
 
 
 class FocalLoss(nn.Module):
@@ -123,18 +124,18 @@ class YoloV3Loss(nn.Module):
         return loss, loss_giou, loss_conf, loss_cls
 
 
-if __name__ == "__main__":
-    from model.yolov3 import Yolov3
-    net = Yolov3()
+# if __name__ == "__main__":
+#     from model.yolov3 import Yolov3
+#     net = Yolov3()
 
-    p, p_d = net(torch.rand(3, 3, 416, 416))
-    label_sbbox = torch.rand(3,  52, 52, 3,26)
-    label_mbbox = torch.rand(3,  26, 26, 3, 26)
-    label_lbbox = torch.rand(3, 13, 13, 3,26)
-    sbboxes = torch.rand(3, 150, 4)
-    mbboxes = torch.rand(3, 150, 4)
-    lbboxes = torch.rand(3, 150, 4)
+#     p, p_d = net(torch.rand(3, 3, 416, 416))
+#     label_sbbox = torch.rand(3,  52, 52, 3,26)
+#     label_mbbox = torch.rand(3,  26, 26, 3, 26)
+#     label_lbbox = torch.rand(3, 13, 13, 3,26)
+#     sbboxes = torch.rand(3, 150, 4)
+#     mbboxes = torch.rand(3, 150, 4)
+#     lbboxes = torch.rand(3, 150, 4)
 
-    loss, loss_xywh, loss_conf, loss_cls = YoloV3Loss(cfg.MODEL["ANCHORS"], cfg.MODEL["STRIDES"])(p, p_d, label_sbbox,
-                                    label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes)
-    print(loss)
+#     loss, loss_xywh, loss_conf, loss_cls = YoloV3Loss(cfg.MODEL["ANCHORS"], cfg.MODEL["STRIDES"])(p, p_d, label_sbbox,
+#                                     label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes)
+#     print(loss)

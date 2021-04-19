@@ -15,6 +15,7 @@ import utils.gpu as gpu
 from eval.evaluator import *
 from model.loss.yolo_loss import YoloV3Loss
 from model.yolov3 import Yolov3
+from model.yolov3_s import Yolov3_S
 from utils import cosine_lr_scheduler
 from utils.tools import *
 
@@ -23,8 +24,9 @@ from utils.tools import *
 
 
 class Trainer(object):
-    def __init__(self,  weight_path, resume, gpu_id):
+    def __init__(self, model,  weight_path, resume, gpu_id):
         init_seeds(0)
+        self.model = model
         self.device = gpu.select_device(gpu_id)
         self.start_epoch = 0
         self.best_mAP = 0.
@@ -36,7 +38,12 @@ class Trainer(object):
                                            batch_size=cfg.TRAIN["BATCH_SIZE"],
                                            num_workers=cfg.TRAIN["NUMBER_WORKERS"],
                                            shuffle=True)
-        self.yolov3 = Yolov3().to(self.device)
+        if self.model == 's':
+            self.yolov3 = Yolov3_S().to(self.device)
+            self.model_postfix = '_s'
+        else:
+            self.yolov3 = Yolov3().to(self.device)
+            self.model_postfix = '_m'
         # self.yolov3.apply(tools.weights_init_normal)
 
         self.optimizer = optim.SGD(self.yolov3.parameters(), lr=cfg.TRAIN["LR_INIT"],
@@ -57,7 +64,7 @@ class Trainer(object):
 
     def __load_model_weights(self, weight_path, resume):
         if resume:
-            last_weight = os.path.join(os.path.split(weight_path)[0], "last.pt")
+            last_weight = os.path.join(weight_path, f"last{self.model_postfix}.pt")
             chkpt = torch.load(last_weight, map_location=self.device)
             self.yolov3.load_state_dict(chkpt['model'])
 
@@ -66,15 +73,13 @@ class Trainer(object):
                 self.optimizer.load_state_dict(chkpt['optimizer'])
                 self.best_mAP = chkpt['best_mAP']
             del chkpt
-        # else:
-        #     self.yolov3.load_darknet_weights(weight_path)
 
 
     def __save_model_weights(self, epoch, mAP):
         if mAP > self.best_mAP:
             self.best_mAP = mAP
-        best_weight = os.path.join(os.path.split(self.weight_path)[0], "best.pt")
-        last_weight = os.path.join(os.path.split(self.weight_path)[0], "last.pt")
+        best_weight = os.path.join(os.path.split(self.weight_path)[0], f"best{self.model_postfix}.pt")
+        last_weight = os.path.join(os.path.split(self.weight_path)[0], f"last{self.model_postfix}.pt")
         chkpt = {'epoch': epoch,
                  'best_mAP': self.best_mAP,
                  'model': self.yolov3.state_dict(),
@@ -85,7 +90,7 @@ class Trainer(object):
             torch.save(chkpt['model'], best_weight)
 
         if epoch > 0 and epoch % 10 == 0:
-            torch.save(chkpt, os.path.join(os.path.split(self.weight_path)[0], 'backup_epoch%g.pt'%epoch))
+            torch.save(chkpt, os.path.join(os.path.split(self.weight_path)[0], f'backup_epoch{epoch}{self.model_postfix}.pt'))
         del chkpt
 
 
@@ -137,7 +142,7 @@ class Trainer(object):
                         print("multi_scale_img_size : {}".format(self.train_dataset.img_size))
 
             mAP = 0
-            if epoch >= 20 and epoch % 10 == 0:
+            if epoch >= 20:
                 print('*'*20+"Validate"+'*'*20)
                 with torch.no_grad():
                     APs = Evaluator(self.yolov3).APs_voc()
@@ -153,11 +158,13 @@ class Trainer(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weight_path', type=str, default='weights/darknet53_448.weights', help='weight file path')
+    parser.add_argument('--model', type=str, default='m', help='model to use: s, m, l')
+    parser.add_argument('--weight_path', type=str, default='weights', help='weight directory path')
     parser.add_argument('--resume', action='store_true',default=False,  help='resume training flag')
     parser.add_argument('--gpu_id', type=int, default=0, help='gpu id')
     opt = parser.parse_args()
 
-    Trainer(weight_path=opt.weight_path,
+    Trainer(model=opt.model,
+            weight_path=opt.weight_path,
             resume=opt.resume,
             gpu_id=opt.gpu_id).train()
