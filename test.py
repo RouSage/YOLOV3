@@ -8,6 +8,7 @@ import config.yolov3_config_voc as cfg
 import utils.gpu as gpu
 from eval.evaluator import Evaluator
 from model.yolov3 import Yolov3
+from model.yolov3_s import Yolov3_S
 from utils.tools import *
 from utils.visualize import *
 
@@ -17,12 +18,14 @@ from utils.visualize import *
 
 class Tester(object):
     def __init__(self,
+                 model,
                  weight_path=None,
                  gpu_id=0,
                  img_size=544,
                  visiual=None,
                  eval=False
                  ):
+        self.model = model
         self.img_size = img_size
         self.__num_class = cfg.DATA["NUM"]
         self.__conf_threshold = cfg.TEST["CONF_THRESH"]
@@ -35,12 +38,14 @@ class Tester(object):
         self.__eval = eval
         self.__classes = cfg.DATA["CLASSES"]
 
-        self.__model = Yolov3().to(self.__device)
+        if self.model == 's':
+            self.__model = Yolov3_S().to(self.__device)
+        else:
+            self.__model = Yolov3().to(self.__device)
 
         self.__load_model_weights(weight_path)
 
         self.__evalter = Evaluator(self.__model, visiual=False)
-
 
     def __load_model_weights(self, weight_path):
         print("loading weight file from : {}".format(weight_path))
@@ -50,7 +55,6 @@ class Tester(object):
         self.__model.load_state_dict(chkpt)
         print("loading weight file is done")
         del chkpt
-
 
     def test(self):
         if self.__visiual:
@@ -68,19 +72,20 @@ class Tester(object):
                     class_inds = bboxes_prd[..., 5].astype(np.int32)
                     scores = bboxes_prd[..., 4]
 
-                    visualize_boxes(image=img, boxes=boxes, labels=class_inds, probs=scores, class_labels=self.__classes)
+                    visualize_boxes(image=img, boxes=boxes, labels=class_inds,
+                                    probs=scores, class_labels=self.__classes)
                     path = os.path.join(cfg.PROJECT_PATH, "data/{}".format(v))
 
                     cv2.imwrite(path, img)
                     print("saved images : {}".format(path))
-
 
         if self.__eval:
             mAP = 0
             print('*' * 20 + "Validate" + '*' * 20)
 
             with torch.no_grad():
-                APs = Evaluator(self.__model).APs_voc(self.__multi_scale_test, self.__flip_test)
+                APs = Evaluator(self.__model).APs_voc(
+                    self.__multi_scale_test, self.__flip_test)
 
                 for i in APs:
                     print("{} --> mAP : {}".format(i, APs[i]))
@@ -89,16 +94,21 @@ class Tester(object):
                 print('mAP:%g' % (mAP))
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weight_path', type=str, default='weights/best.pt', help='weight file path')
-    parser.add_argument('--visiual', type=str, default='./data/test', help='test data path or None')
-    parser.add_argument('--eval', action='store_true', default=True, help='eval the mAP or not')
+    parser.add_argument('--model', type=str, default='m',
+                        help='model to use: s, m, l')
+    parser.add_argument('--weight_path', type=str,
+                        default='weights/best.pt', help='weight file path')
+    parser.add_argument('--visiual', type=str,
+                        default='./data/test', help='test data path or None')
+    parser.add_argument('--eval', action='store_true',
+                        default=True, help='eval the mAP or not')
     parser.add_argument('--gpu_id', type=int, default=0, help='gpu id')
     opt = parser.parse_args()
 
-    Tester( weight_path=opt.weight_path,
-            gpu_id=opt.gpu_id,
-            eval=opt.eval,
-            visiual=opt.visiual).test()
+    Tester(model=opt.model,
+           weight_path=opt.weight_path,
+           gpu_id=opt.gpu_id,
+           eval=opt.eval,
+           visiual=opt.visiual).test()

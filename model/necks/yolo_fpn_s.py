@@ -27,12 +27,12 @@ class Route(nn.Module):
         return out
 
 
-class FPN_YOLOV3(nn.Module):
+class FPN_YOLOV3_S(nn.Module):
     """
     FPN for yolov3, and is different from original FPN or retinanet' FPN.
     """
     def __init__(self, fileters_in, fileters_out):
-        super(FPN_YOLOV3, self).__init__()
+        super(FPN_YOLOV3_S, self).__init__()
 
         fi_0, fi_1, fi_2 = fileters_in
         fo_0, fo_1, fo_2 = fileters_out
@@ -44,10 +44,6 @@ class FPN_YOLOV3(nn.Module):
             Convolutional(filters_in=512, filters_out=1024, kernel_size=3, stride=1, pad=1, norm="bn",
                           activate="leaky"),
             Convolutional(filters_in=1024, filters_out=512, kernel_size=1, stride=1, pad=0, norm="bn",
-                          activate="leaky"),
-            Convolutional(filters_in=512, filters_out=1024, kernel_size=3, stride=1, pad=1, norm="bn",
-                          activate="leaky"),
-            Convolutional(filters_in=1024, filters_out=512, kernel_size=1, stride=1,pad=0, norm="bn",
                           activate="leaky"),
         )
         self.__conv0_0 = Convolutional(filters_in=512, filters_out=1024, kernel_size=3, stride=1,
@@ -69,10 +65,6 @@ class FPN_YOLOV3(nn.Module):
                           activate="leaky"),
             Convolutional(filters_in=512, filters_out=256, kernel_size=1, stride=1, pad=0, norm="bn",
                           activate="leaky"),
-            Convolutional(filters_in=256, filters_out=512, kernel_size=3, stride=1, pad=1, norm="bn",
-                          activate="leaky"),
-            Convolutional(filters_in=512, filters_out=256, kernel_size=1, stride=1, pad=0, norm="bn",
-                          activate="leaky"),
         )
         self.__conv1_0 = Convolutional(filters_in=256, filters_out=512, kernel_size=3, stride=1,
                                        pad=1, norm="bn", activate="leaky")
@@ -88,10 +80,6 @@ class FPN_YOLOV3(nn.Module):
         # small
         self.__conv_set_2 = nn.Sequential(
             Convolutional(filters_in=fi_2+128, filters_out=128, kernel_size=1, stride=1, pad=0, norm="bn",
-                          activate="leaky"),
-            Convolutional(filters_in=128, filters_out=256, kernel_size=3, stride=1, pad=1, norm="bn",
-                          activate="leaky"),
-            Convolutional(filters_in=256, filters_out=128, kernel_size=1, stride=1, pad=0, norm="bn",
                           activate="leaky"),
             Convolutional(filters_in=128, filters_out=256, kernel_size=3, stride=1, pad=1, norm="bn",
                           activate="leaky"),

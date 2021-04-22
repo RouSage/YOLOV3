@@ -11,7 +11,7 @@ from utils.tools import *
 from model.backbones.darknet31 import Darknet31
 from model.head.yolo_head import Yolo_head
 from model.layers.conv_module import Convolutional
-from model.necks.yolo_fpn import FPN_YOLOV3
+from model.necks.yolo_fpn_s import FPN_YOLOV3_S
 
 
 class Yolov3_S(nn.Module):
@@ -27,7 +27,7 @@ class Yolov3_S(nn.Module):
         self.__out_channel = cfg.MODEL["ANCHORS_PER_SCLAE"] * (self.__nC + 5)
 
         self.__backnone = Darknet31()
-        self.__fpn = FPN_YOLOV3(fileters_in=[1024, 512, 256],
+        self.__fpn = FPN_YOLOV3_S(fileters_in=[1024, 512, 256],
                                 fileters_out=[self.__out_channel, self.__out_channel, self.__out_channel])
 
         # small

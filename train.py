@@ -78,8 +78,8 @@ class Trainer(object):
     def __save_model_weights(self, epoch, mAP):
         if mAP > self.best_mAP:
             self.best_mAP = mAP
-        best_weight = os.path.join(os.path.split(self.weight_path)[0], f"best{self.model_postfix}.pt")
-        last_weight = os.path.join(os.path.split(self.weight_path)[0], f"last{self.model_postfix}.pt")
+        best_weight = os.path.join(self.weight_path, f"best{self.model_postfix}.pt")
+        last_weight = os.path.join(self.weight_path, f"last{self.model_postfix}.pt")
         chkpt = {'epoch': epoch,
                  'best_mAP': self.best_mAP,
                  'model': self.yolov3.state_dict(),
@@ -90,7 +90,7 @@ class Trainer(object):
             torch.save(chkpt['model'], best_weight)
 
         if epoch > 0 and epoch % 10 == 0:
-            torch.save(chkpt, os.path.join(os.path.split(self.weight_path)[0], f'backup_epoch{epoch}{self.model_postfix}.pt'))
+            torch.save(chkpt, os.path.join(self.weight_path, f'backup_epoch{epoch}{self.model_postfix}.pt'))
         del chkpt
 
 
