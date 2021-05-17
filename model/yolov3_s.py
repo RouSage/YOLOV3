@@ -1,23 +1,22 @@
+from model.necks.yolo_fpn_s import FPN_YOLOV3_S
+from model.layers.conv_module import Convolutional
+from model.head.yolo_head import Yolo_head
+from model.backbones.darknet31 import Darknet31
+from utils.tools import *
+import torch.nn as nn
+import torch
+import numpy as np
+import config.yolov3_config_voc as cfg
 import sys
 
 sys.path.append("..")
-
-import config.yolov3_config_voc as cfg
-import numpy as np
-import torch
-import torch.nn as nn
-from utils.tools import *
-
-from model.backbones.darknet31 import Darknet31
-from model.head.yolo_head import Yolo_head
-from model.layers.conv_module import Convolutional
-from model.necks.yolo_fpn_s import FPN_YOLOV3_S
 
 
 class Yolov3_S(nn.Module):
     """
     Note ： int the __init__(), to define the modules should be in order, because of the weight file is order
     """
+
     def __init__(self, init_weights=True):
         super(Yolov3_S, self).__init__()
 
@@ -28,18 +27,20 @@ class Yolov3_S(nn.Module):
 
         self.__backnone = Darknet31()
         self.__fpn = FPN_YOLOV3_S(fileters_in=[1024, 512, 256],
-                                fileters_out=[self.__out_channel, self.__out_channel, self.__out_channel])
+                                  fileters_out=[self.__out_channel, self.__out_channel, self.__out_channel])
 
         # small
-        self.__head_s = Yolo_head(nC=self.__nC, anchors=self.__anchors[0], stride=self.__strides[0])
+        self.__head_s = Yolo_head(
+            nC=self.__nC, anchors=self.__anchors[0], stride=self.__strides[0])
         # medium
-        self.__head_m = Yolo_head(nC=self.__nC, anchors=self.__anchors[1], stride=self.__strides[1])
+        self.__head_m = Yolo_head(
+            nC=self.__nC, anchors=self.__anchors[1], stride=self.__strides[1])
         # large
-        self.__head_l = Yolo_head(nC=self.__nC, anchors=self.__anchors[2], stride=self.__strides[2])
+        self.__head_l = Yolo_head(
+            nC=self.__nC, anchors=self.__anchors[2], stride=self.__strides[2])
 
         if init_weights:
             self.__init_weights()
-
 
     def forward(self, x):
         out = []
@@ -58,9 +59,7 @@ class Yolov3_S(nn.Module):
             p, p_d = list(zip(*out))
             return p, torch.cat(p_d, 0)
 
-
     def __init_weights(self):
-
         " Note ：nn.Conv2d nn.BatchNorm2d'initing modes are uniform "
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -74,62 +73,6 @@ class Yolov3_S(nn.Module):
                 torch.nn.init.constant_(m.bias.data, 0.0)
 
                 print("initing {}".format(m))
-
-
-    def load_darknet_weights(self, weight_file, cutoff=52):
-        "https://github.com/ultralytics/yolov3/blob/master/models.py"
-
-        print("load darknet weights : ", weight_file)
-
-        with open(weight_file, 'rb') as f:
-            _ = np.fromfile(f, dtype=np.int32, count=5)
-            weights = np.fromfile(f, dtype=np.float32)
-        count = 0
-        ptr = 0
-        for m in self.modules():
-            if isinstance(m, Convolutional):
-                # only initing backbone conv's weights
-                if count == cutoff:
-                    break
-                count += 1
-
-                conv_layer = m._Convolutional__conv
-                if m.norm == "bn":
-                    # Load BN bias, weights, running mean and running variance
-                    bn_layer = m._Convolutional__norm
-                    num_b = bn_layer.bias.numel()  # Number of biases
-                    # Bias
-                    bn_b = torch.from_numpy(weights[ptr:ptr + num_b]).view_as(bn_layer.bias.data)
-                    bn_layer.bias.data.copy_(bn_b)
-                    ptr += num_b
-                    # Weight
-                    bn_w = torch.from_numpy(weights[ptr:ptr + num_b]).view_as(bn_layer.weight.data)
-                    bn_layer.weight.data.copy_(bn_w)
-                    ptr += num_b
-                    # Running Mean
-                    bn_rm = torch.from_numpy(weights[ptr:ptr + num_b]).view_as(bn_layer.running_mean)
-                    bn_layer.running_mean.data.copy_(bn_rm)
-                    ptr += num_b
-                    # Running Var
-                    bn_rv = torch.from_numpy(weights[ptr:ptr + num_b]).view_as(bn_layer.running_var)
-                    bn_layer.running_var.data.copy_(bn_rv)
-                    ptr += num_b
-
-                    print("loading weight {}".format(bn_layer))
-                else:
-                    # Load conv. bias
-                    num_b = conv_layer.bias.numel()
-                    conv_b = torch.from_numpy(weights[ptr:ptr + num_b]).view_as(conv_layer.bias.data)
-                    conv_layer.bias.data.copy_(conv_b)
-                    ptr += num_b
-                # Load conv. weights
-                num_w = conv_layer.weight.numel()
-                conv_w = torch.from_numpy(weights[ptr:ptr + num_w]).view_as(conv_layer.weight.data)
-                conv_layer.weight.data.copy_(conv_w)
-                ptr += num_w
-
-                print("loading weight {}".format(conv_layer))
-
 
 
 if __name__ == '__main__':
